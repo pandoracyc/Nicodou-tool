@@ -36,7 +36,30 @@ require 'net/http'
 
 class Niconico
 
-	attr_reader(:title)
+	attr_reader(:video_id         )
+	attr_reader(:title            )
+	attr_reader(:description      )
+	attr_reader(:thumbnail_url    )
+	attr_reader(:first_retriev    )
+	attr_reader(:length           )
+	attr_reader(:movie_type       )
+	attr_reader(:size_high        )
+	attr_reader(:size_low         )
+	attr_reader(:view_counter     )
+	attr_reader(:comment_num      )
+	attr_reader(:mylist_counte    )
+	attr_reader(:last_res_body    )
+	attr_reader(:watch_url        )
+	attr_reader(:thumb_type       )
+	attr_reader(:embeddable       )
+	attr_reader(:no_live_play     )
+	attr_reader(:user_id          )
+	attr_reader(:error_code       )
+	attr_reader(:error_description)
+	attr_reader(:tags             )
+	attr_reader(:tags_category    )
+	attr_reader(:tags_lock        )
+
 
     def initialize(video_id = 1)
 		@number = video_id
@@ -66,11 +89,11 @@ class Niconico
 	def getInfo
 		getXML
 
-		error_code = ""
-		error_description = ""
-		tags = Array.new()
-		tags_category = Array.new()
-		tags_lock = Array.new()
+		@error_code = ""
+		@error_description = ""
+		@tags = Array.new()
+		@tags_category = Array.new()
+		@tags_lock = Array.new()
 
 		doc = REXML::Document.new(open("xml/#{@number}.xml"))
 		result = doc.elements['nicovideo_thumb_response'].attributes['status']
@@ -101,12 +124,12 @@ class Niconico
 			@user_id			= doc.elements['nicovideo_thumb_response/thumb/user_id'].text
 			#tags_domain		= doc.elements['nicovideo_thumb_response/thumb/tags'].attributes['domain']
 			doc.elements.each('nicovideo_thumb_response/thumb/tags/tag') do |tag|
-				tags.push(tag.text)
-				tags_category.push(tag.attributes['category']) 
-				tags_lock.push(tag.attributes['lock'])
+				@tags.push(tag.text)
+				@tags_category.push(tag.attributes['category']) 
+				@tags_lock.push(tag.attributes['lock'])
 			end
 			#p tags,tags_category,tags_lock
-			tags_csv = tags.join(",")
+			tags_csv = @tags.join(",")
 			printf("video_id:%s title:%s\n", @video_id, @title)
 
 		end
