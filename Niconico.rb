@@ -14,7 +14,7 @@ require 'open-uri'
 require 'kconv'
 require 'net/http'
 
-# == Sample
+# == Sample 1
 #
 # require "./Niconico"
 # 
@@ -32,7 +32,24 @@ require 'net/http'
 # end
 # nico.logout
 #
-
+#
+#
+# == Sample 2
+# require "./Niconico"
+# 
+# mail = "mail"
+# password = "password"
+# nico = Niconico::new
+# nico.login(mail,password)
+# title = niconico.getMylist(30982485) { |number|
+# 	nico.setVideoId(number)
+#	nico.download
+# 	sleep(3)
+# }
+# p title 
+# p niconico.getMylistTitle
+# nico.logout
+#
 
 class Niconico
 
@@ -79,11 +96,16 @@ class Niconico
 
 	def getXML
 		page = open("http://ext.nicovideo.jp/api/getthumbinfo/sm#{@number}")
-		File.open("xml/#{@number}.xml", 'w') { |f|
-			page.each_line do |line|
-				f.write line
-			end
-		}
+		xml_filename = "xml/#{@number}.xml"
+		if File.exist?(xml_filename) then
+			printf("%s is already downloaded.\n",xml_filename)
+		else
+			File.open(xml_filename, 'w') { |f|
+				page.each_line do |line|
+					f.write line
+				end
+			}
+		end
 	end
 
 	def getInfo
@@ -169,5 +191,39 @@ class Niconico
 			file.close
 		end
 	end
+
+	def getMylist(mylist_no)
+		@mylist_link = Array.new()
+		@mylist_title = nil
+		page = open("http://www.nicovideo.jp/mylist/#{mylist_no}?rss=atom")
+		xml_filename = "xml/mylist#{mylist_no}.xml"
+		if File.exist?(xml_filename) then
+			printf("%s is already downloaded.\n",xml_filename)
+		else
+			File.open(xml_filename, 'w') { |f|
+				page.each_line do |line|
+					f.write line
+				end
+			}
+		end
+
+		mylist = REXML::Document.new(open(xml_filename))
+		@mylist_title = mylist.elements['feed/title'].text
+		@mylist_title =~ /マイリスト (.*)‐ニコニコ動画/
+		@mylist_title = $1
+		mylist.elements.each('feed/entry') do |entry|
+			link = entry.elements['link'].attributes['href']
+			@mylist_link.push( link )
+			link =~ /http:\/\/www.nicovideo.jp\/watch\/sm(\d*)/
+			number = $1
+			yield number
+		end
+		@mylist_title
+	end
+
+	def getMylistTitle
+		return @mylist_title
+	end
+
 end
 
