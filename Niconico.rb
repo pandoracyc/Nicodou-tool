@@ -27,11 +27,10 @@ require 'net/http'
 # end_id   = start_id 
 # for number in start_id .. end_id do
 # 	nico.setVideoId(number)
-# 	nico.getXML
-# 	nico.parse
 # 	nico.download
 # 	sleep(3)
 # end
+# nico.logout
 #
 
 
@@ -42,16 +41,17 @@ class Niconico
     def initialize(video_id = 1)
 		@number = video_id
 		if video_id != 1 then
-			getXML
-			parse
+			getInfo
 		end
 		#@my.query("delete from Nicodou")
 	end
 
-	#==Description
-	#Set video id 
+	# == Description
+	# Set video id 
 	def setVideoId(video_id)
+		#TODO video_id = sm9
 		@number = video_id
+		getInfo
 	end
 
 	def getXML
@@ -63,7 +63,9 @@ class Niconico
 		}
 	end
 
-	def parse
+	def getInfo
+		getXML
+
 		error_code = ""
 		error_description = ""
 		tags = Array.new()
@@ -113,6 +115,10 @@ class Niconico
 	def login(mail,password)
 		@mail = mail
 		@password = password
+	end
+
+	def logout
+		printf("TODO")
 	end
 
 	def download
