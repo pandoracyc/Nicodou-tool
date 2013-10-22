@@ -1,12 +1,12 @@
 Rubyを使用してニコニコ動画サイトから動画情報を取得する
 =========================================================
 
-対応するniconicoAPI一覧
-	getflv
-		http://flapi.nicovideo.jp/api/getflv/sm*
+## 対応するniconicoAPI一覧
+	* **getflv** -
+		http://flapi.nicovideo.jp/api/getflv/sm
 		指定された動画のFLV保管URLを取得できる
-	getthumbinfo
-		http://ext.nicovideo.jp/api/getthumbinfo/sm**
+	* getthumbinfo
+		http://ext.nicovideo.jp/api/getthumbinfo/sm
 		動画の情報を得られる
 
 非対応
