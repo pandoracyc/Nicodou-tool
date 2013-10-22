@@ -61,12 +61,12 @@ class Niconico
 	attr_reader(:tags_lock        )
 
 
-    def initialize(video_id = 1)
+    def initialize(video_id = nil)
 		@number = video_id
-		if video_id != 1 then
+		@agent = Mechanize.new
+		if video_id != nil then
 			getInfo
 		end
-		#@my.query("delete from Nicodou")
 	end
 
 	# == Description
@@ -96,8 +96,8 @@ class Niconico
 		@tags_lock = Array.new()
 
 		doc = REXML::Document.new(open("xml/#{@number}.xml"))
-		result = doc.elements['nicovideo_thumb_response'].attributes['status']
-		if result == "fail" then
+		@status = doc.elements['nicovideo_thumb_response'].attributes['status']
+		if @status == "fail" then
 			@error_code = doc.elements['nicovideo_thumb_response/error/code'].text
 			@error_description = doc.elements['nicovideo_thumb_response/error/description'].text
 			printf("video_id:%s Fail Code:%s::%s\n" ,@number ,@error_code ,@error_description)
@@ -138,36 +138,36 @@ class Niconico
 	def login(mail,password)
 		@mail = mail
 		@password = password
-	end
-
-	def logout
-		printf("TODO")
-	end
-
-	def download
-		flv_id = @video_id
-		agent = Mechanize.new
-		login_page = agent.get("https://secure.nicovideo.jp/secure/login_form")
+		login_page = @agent.get("https://secure.nicovideo.jp/secure/login_form")
 		login_form = login_page.forms.first
 		login_form['mail_tel'] = @mail
 		login_form['password'] = @password
-		redirect_page = agent.submit(login_form)
-		getflv = agent.get("http://flapi.nicovideo.jp/api/getflv/"+flv_id)
-		getflv_url=URI.decode(getflv.body)
-		getflv_url2=getflv_url.split(/\s*&\s*/)
-		thread_id 		= getflv_url2[0].slice(10..getflv_url2[0].length)
-		url 			= getflv_url2[2].slice(4..getflv_url2[2].length)
-		link			= getflv_url2[3].slice(5..getflv_url2[3].length)
-		ms 				= getflv_url2[4].slice(3..getflv_url2[4].length)
+		redirect_page = @agent.submit(login_form)
+	end
 
-		watch = agent.get("http://www.nicovideo.jp/watch/"+flv_id)
-		#agent.cookie_jar.save("test.cookie")
-		printf("Start Downloading:%s\n",flv_id)
-		flv_file = agent.get_file(url)
-		file = File.open("video/" + flv_id + "." + @movie_type, "wb")
-		file.write flv_file
-		file.close
-		logout=agent.get("https://secure.nicovideo.jp/secure/logout")
+	def logout
+		@agent.get("https://secure.nicovideo.jp/secure/logout")
+	end
+
+	def download
+		if @status == "ok" then
+			flv_id = @video_id
+			getflv = @agent.get("http://flapi.nicovideo.jp/api/getflv/"+flv_id)
+			getflv_url=URI.decode(getflv.body)
+			getflv_url2=getflv_url.split(/\s*&\s*/)
+			#thread_id 		= getflv_url2[0].slice(10..getflv_url2[0].length)
+			url 			= getflv_url2[2].slice(4..getflv_url2[2].length)
+			#link			= getflv_url2[3].slice(5..getflv_url2[3].length)
+			#ms 				= getflv_url2[4].slice(3..getflv_url2[4].length)
+
+			@agent.get("http://www.nicovideo.jp/watch/"+flv_id)
+			#agent.cookie_jar.save("test.cookie")
+			#printf("Start Downloading:%s\n",flv_id)
+			video_file = @agent.get_file(url)
+			file = File.open("video/" + flv_id + "." + @movie_type, "wb")
+			file.write video_file
+			file.close
+		end
 	end
 end
 
