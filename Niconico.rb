@@ -1,12 +1,8 @@
 #!/usr/local/bin/ruby
 
 require 'uri'
-require 'csv'
-require "mysql"
 require 'rubygems'
-require 'cgi'
 require 'open-uri'
-require 'json'
 require 'rexml/document'
 require 'hpricot'
 require 'mechanize'
@@ -41,7 +37,7 @@ require 'net/http'
 # password = "password"
 # nico = Niconico::new
 # nico.login(mail,password)
-# title = niconico.getMylist(30982485) { |number|
+# title = niconico.getMylist(1773577) { |number|
 # 	nico.setVideoId(number)
 #	nico.download
 # 	sleep(3)
@@ -95,16 +91,23 @@ class Niconico
 	end
 
 	def getXML
-		page = open("http://ext.nicovideo.jp/api/getthumbinfo/sm#{@number}")
-		xml_filename = "xml/#{@number}.xml"
-		if File.exist?(xml_filename) then
-			printf("%s is already downloaded.\n",xml_filename)
-		else
-			File.open(xml_filename, 'w') { |f|
-				page.each_line do |line|
-					f.write line
-				end
-			}
+		cnt_retry = 0
+		begin
+			page = open("http://ext.nicovideo.jp/api/getthumbinfo/sm#{@number}")
+			xml_filename = "xml/#{@number}.xml"
+			if File.exist?(xml_filename) then
+				printf("%s is already downloaded.\n",xml_filename)
+			else
+				File.open(xml_filename, 'w') { |f|
+					page.each_line do |line|
+						f.write line
+					end
+				}
+			end
+		rescue
+			sleep 30
+			cnt_retry += 1
+			retry if cnt_retry < 5
 		end
 	end
 
