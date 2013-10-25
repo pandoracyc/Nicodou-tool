@@ -1,2 +1,3 @@
 mkdir video 2>/dev/null
 mkdir xml 2>/dev/null
+mkdir comment 2>/dev/null

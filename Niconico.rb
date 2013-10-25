@@ -183,7 +183,7 @@ class Niconico
 			#thread_id 		= getflv_url2[0].slice(10..getflv_url2[0].length)
 			url 			= getflv_url2[2].slice(4..getflv_url2[2].length)
 			#link			= getflv_url2[3].slice(5..getflv_url2[3].length)
-			#ms 				= getflv_url2[4].slice(3..getflv_url2[4].length)
+			@ms_url			= getflv_url2[4].slice(3..getflv_url2[4].length)
 
 			@agent.get("http://www.nicovideo.jp/watch/"+flv_id)
 			#agent.cookie_jar.save("test.cookie")
@@ -226,6 +226,29 @@ class Niconico
 
 	def getMylistTitle
 		return @mylist_title
+	end
+
+	def getComment(comment_num = -250)
+		if @status == "ok" then
+			flv_id = @video_id
+			getflv = @agent.get("http://flapi.nicovideo.jp/api/getflv/"+flv_id)
+			getflv_url=URI.decode(getflv.body)
+			getflv_url2=getflv_url.split(/\s*&\s*/)
+			@thread_id 		= getflv_url2[0].slice(10..getflv_url2[0].length)
+			#url 			= getflv_url2[2].slice(4..getflv_url2[2].length)
+			#link			= getflv_url2[3].slice(5..getflv_url2[3].length)
+			@ms_url			= getflv_url2[4].slice(3..getflv_url2[4].length)
+			@version="20061206"
+			post_xml = sprintf("<thread thread=\"%s\" version=\"%s\" res_from=\"%d\" />",@thread_id,@version,comment_num)
+
+			uri = URI.parse(@ms_url)
+			Net::HTTP.start(uri.host, uri.port){|http|
+			  response = http.post(uri.path, post_xml)
+				file = File.open("comment/" + flv_id + ".xml" , "wb")
+				file.write response.body
+				file.close
+			}
+		end
 	end
 
 end

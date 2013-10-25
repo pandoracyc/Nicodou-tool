@@ -11,6 +11,9 @@ Rubyを使用してニコニコ動画サイトから動画情報を取得する
 * **rss** - マイリストや投稿動画一覧などのURLの最後に「?rss=atom(または2.0)」と打ち込んでアクセスすると、ATOM(RSS)形式で表示され、購読することも可能  
 	`http://www.nicovideo.jp/**/**?rss=atom or http://www.nicovideo.jp/**/**?rss=2.0`
 
+* **msg** - このURLに、XMLをPOSTすると、指定した動画のコメントを取得できる  
+	`http://msg.nicovideo.jp/**/api`
+
 
 ## 非対応(未検証)
 * **thumb** - 張り付け用のiframeが得られる  
@@ -19,5 +22,3 @@ Rubyを使用してニコニコ動画サイトから動画情報を取得する
 	`http://flapi.nicovideo.jp/api/getmarquee?*`
 * **getrelation** - それぞれpage,sort,order,videoを設定してアクセスすると、動画に関連するオススメ動画リストをXML形式で取得できる
 	`http://flapi.nicovideo.jp/api/getrelation?page=**&sort=**&order=**&video=**`
-* **msg** - このURLに、XMLをPOSTすると、指定した動画のコメントを取得できる  
-	`http://msg.nicovideo.jp/**/api`
