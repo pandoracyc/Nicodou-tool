@@ -39,6 +39,9 @@ require 'net/http'
 # nico.login(mail,password)
 # title = niconico.getMylist(1773577) { |number|
 # 	nico.setVideoId(number)
+#	nico.getComment(-1000) do |chat|
+#		p chat
+#	end
 #	nico.download
 # 	sleep(3)
 # }
@@ -78,7 +81,7 @@ class Niconico
 		@number = video_id
 		@agent = Mechanize.new
 		if video_id != nil then
-			getInfo
+			getVideoInfo
 		end
 	end
 
@@ -87,7 +90,7 @@ class Niconico
 	def setVideoId(video_id)
 		#TODO video_id = sm9
 		@number = video_id
-		getInfo
+		getVideoInfo
 	end
 
 	def getXML
@@ -111,7 +114,7 @@ class Niconico
 		end
 	end
 
-	def getInfo
+	def getVideoInfo
 		getXML
 
 		@error_code = ""
@@ -156,8 +159,8 @@ class Niconico
 			#p tags,tags_category,tags_lock
 			tags_csv = @tags.join(",")
 			printf("video_id:%s title:%s\n", @video_id, @title)
-
 		end
+		getflvAPI
 	end
 
 	def login(mail,password)
@@ -168,28 +171,31 @@ class Niconico
 		login_form['mail_tel'] = @mail
 		login_form['password'] = @password
 		redirect_page = @agent.submit(login_form)
+		#TODO set @login_result="ok"|"fail"
 	end
 
 	def logout
 		@agent.get("https://secure.nicovideo.jp/secure/logout")
 	end
 
-	def download
+	def getflvAPI
 		if @status == "ok" then
-			flv_id = @video_id
-			getflv = @agent.get("http://flapi.nicovideo.jp/api/getflv/"+flv_id)
+			getflv = @agent.get("http://flapi.nicovideo.jp/api/getflv/"+@video_id)
 			getflv_url=URI.decode(getflv.body)
 			getflv_url2=getflv_url.split(/\s*&\s*/)
-			#thread_id 		= getflv_url2[0].slice(10..getflv_url2[0].length)
-			url 			= getflv_url2[2].slice(4..getflv_url2[2].length)
-			#link			= getflv_url2[3].slice(5..getflv_url2[3].length)
+			@thread_id 		= getflv_url2[0].slice(10..getflv_url2[0].length)
+			@video_url		= getflv_url2[2].slice(4..getflv_url2[2].length)
+			@link			= getflv_url2[3].slice(5..getflv_url2[3].length)
 			@ms_url			= getflv_url2[4].slice(3..getflv_url2[4].length)
+		end
+	end
 
-			@agent.get("http://www.nicovideo.jp/watch/"+flv_id)
-			#agent.cookie_jar.save("test.cookie")
-			#printf("Start Downloading:%s\n",flv_id)
-			video_file = @agent.get_file(url)
-			file = File.open("video/" + flv_id + "." + @movie_type, "wb")
+	def download
+		if @status == "ok" then
+			@agent.get("http://www.nicovideo.jp/watch/"+@video_id)
+			printf("Start Downloading:%s\n",@video_id)
+			video_file = @agent.get_file(@video_url)
+			file = File.open("video/" + @video_id + "." + @movie_type, "wb")
 			file.write video_file
 			file.close
 		end
@@ -229,25 +235,25 @@ class Niconico
 	end
 
 	def getComment(comment_num = -250)
+		version = "20061206"
+		xml_filename = "comment/#{@video_id}.xml"
 		if @status == "ok" then
-			flv_id = @video_id
-			getflv = @agent.get("http://flapi.nicovideo.jp/api/getflv/"+flv_id)
-			getflv_url=URI.decode(getflv.body)
-			getflv_url2=getflv_url.split(/\s*&\s*/)
-			@thread_id 		= getflv_url2[0].slice(10..getflv_url2[0].length)
-			#url 			= getflv_url2[2].slice(4..getflv_url2[2].length)
-			#link			= getflv_url2[3].slice(5..getflv_url2[3].length)
-			@ms_url			= getflv_url2[4].slice(3..getflv_url2[4].length)
-			@version="20061206"
-			post_xml = sprintf("<thread thread=\"%s\" version=\"%s\" res_from=\"%d\" />",@thread_id,@version,comment_num)
-
 			uri = URI.parse(@ms_url)
 			Net::HTTP.start(uri.host, uri.port){|http|
-			  response = http.post(uri.path, post_xml)
-				file = File.open("comment/" + flv_id + ".xml" , "wb")
+				post_xml = sprintf("<thread thread=\"%s\" version=\"%s\" res_from=\"%d\" />",@thread_id,version,comment_num)
+				response = http.post(uri.path, post_xml)
+				file = File.open(xml_filename , "wb")
 				file.write response.body
 				file.close
 			}
+			comment_list = REXML::Document.new(open(xml_filename))
+			comment = Hash.new
+			comment_list.elements.each('packet/chat') do |chat|
+				comment[:vpos] = chat.attributes['vpos']
+				comment[:chat] = chat.text
+				yield comment
+				#printf("%8d: %s\n",vpos,comment)
+			end
 		end
 	end
 
