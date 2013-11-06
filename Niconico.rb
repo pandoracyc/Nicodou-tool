@@ -78,6 +78,7 @@ class Niconico
 
 
     def initialize(video_id = nil)
+		@temp_dir = "."
 		@number = video_id
 		@agent = Mechanize.new
 		if video_id != nil then
@@ -97,7 +98,7 @@ class Niconico
 		cnt_retry = 0
 		begin
 			page = open("http://ext.nicovideo.jp/api/getthumbinfo/sm#{@number}")
-			xml_filename = "xml/#{@number}.xml"
+			xml_filename = @temp_dir + "/xml/#{@number}.xml"
 			if File.exist?(xml_filename) then
 				printf("%s is already downloaded.\n",xml_filename)
 			else
@@ -123,7 +124,8 @@ class Niconico
 		@tags_category = Array.new()
 		@tags_lock = Array.new()
 
-		doc = REXML::Document.new(open("xml/#{@number}.xml"))
+		xml_filename = @temp_dir + "/xml/#{@number}.xml"
+		doc = REXML::Document.new(open(xml_filename))
 		@status = doc.elements['nicovideo_thumb_response'].attributes['status']
 		if @status == "fail" then
 			@error_code = doc.elements['nicovideo_thumb_response/error/code'].text
@@ -205,7 +207,7 @@ class Niconico
 		@mylist_link = Array.new()
 		@mylist_title = nil
 		page = open("http://www.nicovideo.jp/mylist/#{mylist_no}?rss=atom")
-		xml_filename = "xml/mylist#{mylist_no}.xml"
+		xml_filename = @temp_dir + "/mylist/#{mylist_no}.xml"
 		if File.exist?(xml_filename) then
 			printf("%s is already downloaded.\n",xml_filename)
 		else
@@ -236,7 +238,7 @@ class Niconico
 
 	def getComment(comment_num = -250)
 		version = "20061206"
-		xml_filename = "comment/#{@video_id}.xml"
+		xml_filename = @temp_dir + "/comment/#{@video_id}.xml"
 		if @status == "ok" then
 			uri = URI.parse(@ms_url)
 			Net::HTTP.start(uri.host, uri.port){|http|
@@ -255,6 +257,10 @@ class Niconico
 				#printf("%8d: %s\n",vpos,comment)
 			end
 		end
+	end
+
+	def setTempDir(dir)
+		@temp_dir = dir
 	end
 
 end
